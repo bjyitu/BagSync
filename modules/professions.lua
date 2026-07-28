@@ -117,13 +117,13 @@ local function SetupItemButton(button, item)
 	button.HeaderHighlight:SetAlpha(0)
 	button.isHeader = nil
 
-	-- 检查是否是配方搜索结果
+	-- Check if this is a recipe search result
 	if item.recipeName then
-		-- 配方搜索结果:显示角色和专业信息
+		-- Recipe search result: show character and profession info
 		button.Text:SetTextColor(0.25, 0.88, 0.82)
 		button.Text:SetText(item.colorized .. " - " .. item.professionName .. " (" .. item.tierName .. ")")
 	else
-		-- 原来的专业列表显示
+		-- Original profession list display
 		button.Text:SetTextColor(0.25, 0.88, 0.82)
 
 		--https://warcraft.wiki.gg/wiki/TradeSkillLineID
@@ -174,7 +174,7 @@ function Professions:OnEnable()
 		width = professionsFrame:GetWidth() - 15,
 	})
 
-	-- 添加配方搜索框
+	-- Add recipe search box
 	professionsFrame.recipeSearchBox = UI:CreateEditBox(professionsFrame, {
 		template = "InputBoxTemplate",
 		size = { 200, 20 },
@@ -182,7 +182,7 @@ function Professions:OnEnable()
 		autoFocus = false,
 	})
 	
-	-- 添加搜索框提示文字
+	-- Add search box placeholder text
 	professionsFrame.searchPlaceholder = UI:CreateFontString(professionsFrame, {
 		template = "GameFontDisable",
 		text = L.RecipeSearchBoxPlaceholder or "Search recipes...",
@@ -191,7 +191,7 @@ function Professions:OnEnable()
 		justifyH = "LEFT",
 	})
 	
-	-- 搜索框文字改变时隐藏/显示提示
+	-- Hide/show placeholder when search box text changes
 	professionsFrame.recipeSearchBox:SetScript("OnTextChanged", function(self)
 		local text = self:GetText()
 		if text and text ~= "" then
@@ -201,13 +201,13 @@ function Professions:OnEnable()
 		end
 	end)
 	
-	-- 回车键搜索
+	-- Search on Enter key press
 	professionsFrame.recipeSearchBox:SetScript("OnEnterPressed", function(self)
 		Professions:SearchAllRecipes()
 		self:ClearFocus()
 	end)
 
-	-- 添加配方搜索按钮
+	-- Add recipe search button
 	professionsFrame.recipeSearchBtn = UI:CreateButton(professionsFrame, {
 		template = "UIPanelButtonTemplate",
 		text = L.Search or "Search",
@@ -217,7 +217,7 @@ function Professions:OnEnable()
 		onClick = function() Professions:SearchAllRecipes() end,
 	})
 
-	-- 添加清除搜索按钮
+	-- Add clear search button
 	professionsFrame.clearSearchBtn = UI:CreateButton(professionsFrame, {
 		template = "UIPanelButtonTemplate",
 		text = L.Reset or "Reset",
@@ -346,16 +346,16 @@ function Professions:Item_OnEnter(btn)
 	if not btn.isHeader then
 		GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
 		
-		-- 检查是否是配方搜索结果
+		-- Check if this is a recipe search result
 		if btn.data.recipeName then
-			-- 配方搜索结果的提示
+			-- Tooltip for recipe search result
 			GameTooltip:AddLine("|cFFFFFFFF"..PLAYER..":|r  "..btn.data.colorized)
 			GameTooltip:AddLine("|cFFFFFFFF"..L.Realm.."|r  "..btn.data.unitRealm)
 			GameTooltip:AddLine("|cFFFFFFFF"..L.Profession..":|r  "..btn.data.professionName)
 			GameTooltip:AddLine("|cFFFFFFFF"..L.Category..":|r  "..btn.data.tierName)
 			GameTooltip:AddLine(" ")
 			
-			-- 显示配方信息
+			-- Show recipe info
 			if btn.data.recipeID then
 				local tooltipLink
 				if btn.data.isClassic then
@@ -377,7 +377,7 @@ function Professions:Item_OnEnter(btn)
 				end
 			end
 		else
-			-- 原来的专业列表提示
+			-- Original profession list tooltip
 			GameTooltip:AddLine("|cFFFFFFFF"..PLAYER..":|r  "..btn.data.colorized)
 			GameTooltip:AddLine("|cFFFFFFFF"..L.Realm.."|r  "..btn.data.unitObj.realm)
 			GameTooltip:AddLine("|cFFFFFFFF"..L.TooltipRealmKey.."|r "..(btn.data.unitObj.data.realmKey or "?"))
@@ -416,37 +416,37 @@ function Professions:SearchAllRecipes()
 	local searchText = self.frame.recipeSearchBox:GetText()
 	if not searchText or searchText == "" then return end
 
-	-- 清空列表
+	-- Clear the list
 	Professions.professionList = {}
 
 	local results = {}
 	local getSpellInfo = BSYC.API and BSYC.API.GetSpellInfo
 	local getRecipeInfo = BSYC.API and BSYC.API.GetRecipeInfo
 
-	-- 遍历所有角色
+	-- Iterate over all characters
 	for unitObj in Data:IterateUnits() do
 		if not unitObj.isGuild and unitObj.data.professions then
-			-- 遍历该角色的所有专业
+			-- Iterate over all professions for this character
 			for skillID, skillData in pairs(unitObj.data.professions) do
 				if skillData and skillData.categories then
-					-- 遍历该专业的所有分类
+					-- Iterate over all categories for this profession
 					for tierID, category in pairs(skillData.categories) do
 						if category.recipes and category.recipes ~= "" then
-							-- 解析配方列表
+							-- Parse the recipe list
 							local recipeList = {strsplit("|", category.recipes)}
 							for _, recipeStr in ipairs(recipeList) do
 								if recipeStr and recipeStr ~= "" then
 									local recipeID, recipeName, iconTexture, linkType, isClassic
 
-									-- 判断是 Classic 还是 Retail
+									-- Determine if this is Classic or Retail
 									if skillData.isClassic then
-										-- Classic 格式: "id:type"
+										-- Classic format: "id:type"
 										local numericID, typeStr = string_match(recipeStr, "^(%d+):(%w+)$")
 										recipeID = numericID and tonumber(numericID) or tonumber(recipeStr)
 										linkType = typeStr
 
 										if linkType == "enchant" then
-											-- 附魔是法术ID
+											-- Enchant uses spell ID
 											if getSpellInfo then
 												local sName, _, sIcon = getSpellInfo(recipeID)
 												if sName then
@@ -455,7 +455,7 @@ function Professions:SearchAllRecipes()
 												end
 											end
 										else
-											-- 物品ID
+											-- Item ID
 											local itemName, _, _, _, _, _, _, _, _, itemIcon = GetItemInfo(recipeID)
 											if itemName then
 												recipeName = itemName
@@ -464,12 +464,12 @@ function Professions:SearchAllRecipes()
 										end
 										isClassic = true
 									else
-										-- Retail: recipeID 是 spellID
+										-- Retail: recipeID is the spellID
 										recipeID = tonumber(recipeStr)
 										linkType = nil
 										isClassic = false
 
-										-- 尝试获取配方信息
+										-- Try to get recipe info
 										local recipe_info = getRecipeInfo and getRecipeInfo(recipeID)
 										local gName, _, gIcon
 										if getSpellInfo then
@@ -485,12 +485,12 @@ function Professions:SearchAllRecipes()
 										end
 									end
 
-									-- 如果没有获取到名称,使用占位符
+									-- If no name was retrieved, use a placeholder
 									if not recipeName then
 										recipeName = "Unknown Recipe ("..tostring(recipeID)..")"
 									end
 
-									-- 匹配搜索关键词(不区分大小写)
+									-- Match search keyword (case-insensitive)
 									local searchLower = strlower(searchText)
 									if recipeName and strlower(recipeName):find(searchLower, 1, true) then
 										table_insert(results, {
@@ -515,18 +515,18 @@ function Professions:SearchAllRecipes()
 		end
 	end
 
-	-- 按配方名称排序
+	-- Sort by recipe name
 	if #results > 0 then
 		table_sort(results, function(a, b)
 			return a.recipeName < b.recipeName
 		end)
 
-		-- 转换为列表格式(添加分隔标题)
+		-- Convert to list format (add separator headers)
 		local lastName = ""
 		for i = 1, #results do
 			local entry = results[i]
 
-			-- 添加配方名称作为标题(每个不同配方只显示一次)
+			-- Add recipe name as header (shown once per unique recipe)
 			if lastName ~= entry.recipeName then
 				table_insert(Professions.professionList, {
 					header = entry.recipeName,
@@ -535,7 +535,7 @@ function Professions:SearchAllRecipes()
 				lastName = entry.recipeName
 			end
 
-			-- 添加角色条目
+			-- Add character entry
 			table_insert(Professions.professionList, {
 				recipeName = entry.recipeName,
 				recipeID = entry.recipeID,
@@ -552,10 +552,10 @@ function Professions:SearchAllRecipes()
 		end
 	end
 
-	-- 更新显示
+	-- Update display
 	Professions:RefreshList()
 
-	-- 显示结果数量
+	-- Show result count
 	local count = #results
 	if count > 0 then
 		self.frame.infoText:SetText(format(L.RecipeSearchResults or "Found %d recipes", count))
@@ -570,7 +570,7 @@ function Professions:ClearRecipeSearch()
 	Professions.professionList = {}
 	self.frame.infoText:SetText(L.ProfessionInformation)
 
-	-- 重新加载专业列表
+	-- Reload the profession list
 	Professions:CreateList()
 	Professions:RefreshList()
 end
