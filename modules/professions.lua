@@ -351,8 +351,7 @@ function Professions:Item_OnEnter(btn)
 			-- Tooltip for recipe search result
 			GameTooltip:AddLine("|cFFFFFFFF"..PLAYER..":|r  "..btn.data.colorized)
 			GameTooltip:AddLine("|cFFFFFFFF"..L.Realm.."|r  "..btn.data.unitRealm)
-			GameTooltip:AddLine("|cFFFFFFFF"..L.Profession..":|r  "..btn.data.professionName)
-			GameTooltip:AddLine("|cFFFFFFFF"..L.Category..":|r  "..btn.data.tierName)
+			GameTooltip:AddLine("|cFFFFFFFF"..L.Professions..":|r  "..btn.data.professionName)
 			GameTooltip:AddLine(" ")
 			
 			-- Show recipe info
